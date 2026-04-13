@@ -1,38 +1,23 @@
-import sys
 import time
 
-import soco
-
-SECONDS_PER_UNIT = 10
+DEFAULT_SECONDS_PER_STEP = 10
 
 
-def discover_speakers():
-    speakers = soco.discover(timeout=5)
-    if not speakers:
-        return []
-    return list(speakers)
-
-
-def get_groups(speakers):
-    seen = set()
-    groups = []
-    for speaker in speakers:
-        for group in speaker.all_groups:
-            uid = group.uid
-            if uid not in seen:
-                seen.add(uid)
-                groups.append(group)
-    return groups
+def group_label(group):
+    return ", ".join(m.player_name for m in group.members)
 
 
 def choose_group(groups):
     print("\nAvailable speakers/groups:\n")
-    labels = [
-        ", ".join(m.player_name for m in group.members) for group in groups
-    ]
+    labels = [group_label(group) for group in groups]
     for i, group in enumerate(groups, 1):
-        state = group.coordinator.get_current_transport_info().get("current_transport_state", "UNKNOWN")
-        print(f"  {i}. [{labels[i-1]}] (volume: {group.coordinator.volume}, status: {state})")
+        state = group.coordinator.get_current_transport_info().get(
+            "current_transport_state", "UNKNOWN"
+        )
+        print(
+            f"  {i}. [{labels[i-1]}] "
+            f"(volume: {group.coordinator.volume}, status: {state})"
+        )
 
     if len(groups) == 1:
         print(f"\nOnly one speaker/group found. Using [{labels[0]}].")
@@ -46,6 +31,16 @@ def choose_group(groups):
             print(f"Please enter a number between 1 and {len(groups)}.")
         except ValueError:
             print("Please enter a valid number.")
+
+
+def find_group_by_name(groups, name):
+    needle = name.strip().lower()
+    for group in groups:
+        if group_label(group).lower() == needle:
+            return group
+        if group.coordinator.player_name.lower() == needle:
+            return group
+    return None
 
 
 def choose_target_volume(group):
@@ -62,7 +57,7 @@ def choose_target_volume(group):
             print("Please enter a valid number.")
 
 
-def fade_volume(group, target):
+def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
     current = group.coordinator.volume
     diff = target - current
 
@@ -72,10 +67,12 @@ def fade_volume(group, target):
 
     step = 1 if diff > 0 else -1
     steps = abs(diff)
-    total_time = steps * SECONDS_PER_UNIT
+    total_time = steps * seconds_per_step
 
-    print(f"\nFading from {current} to {target} "
-          f"({steps} steps, ~{total_time:.0f}s)")
+    print(
+        f"\nFading from {current} to {target} "
+        f"({steps} steps, ~{total_time:.0f}s)"
+    )
 
     for i in range(1, steps + 1):
         new_volume = current + (step * i)
@@ -83,27 +80,6 @@ def fade_volume(group, target):
             member.volume = new_volume
         print(f"\r  Volume: {new_volume} (step {i} of {steps})", end="", flush=True)
         if i < steps:
-            time.sleep(SECONDS_PER_UNIT)
+            time.sleep(seconds_per_step)
 
     print(f"\n\nDone. Volume set to {target}.")
-
-
-def main():
-    print("Discovering Sonos speakers...")
-    speakers = discover_speakers()
-    if not speakers:
-        print("No Sonos speakers found on the network.")
-        sys.exit(1)
-
-    groups = get_groups(speakers)
-    if not groups:
-        print("No speaker groups found.")
-        sys.exit(1)
-
-    group = choose_group(groups)
-    target = choose_target_volume(group)
-    fade_volume(group, target)
-
-
-if __name__ == "__main__":
-    main()
