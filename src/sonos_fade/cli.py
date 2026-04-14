@@ -1,6 +1,8 @@
 import argparse
 import sys
 
+from rich.panel import Panel
+
 from sonos_fade.discovery import discover_speakers, get_groups
 from sonos_fade.fade import (
     DEFAULT_SECONDS_PER_STEP,
@@ -10,34 +12,32 @@ from sonos_fade.fade import (
     find_group_by_name,
     group_label,
 )
+from sonos_fade.ui import console, groups_table
+
+
+def _fail(message: str) -> None:
+    console.print(Panel(message, title="[bold red]Error", border_style="red", expand=False))
+    sys.exit(1)
 
 
 def _load_groups_or_exit():
-    print("Discovering Sonos speakers...")
-    speakers = discover_speakers()
+    with console.status("[cyan]Discovering Sonos speakers on your LAN…", spinner="dots"):
+        speakers = discover_speakers()
     if not speakers:
-        print("No Sonos speakers found on the network.")
-        sys.exit(1)
+        _fail("No Sonos speakers found on the network.")
 
     groups = get_groups(speakers)
     if not groups:
-        print("No speaker groups found.")
-        sys.exit(1)
+        _fail("No speaker groups found.")
 
+    console.print(f"[green]✓[/green] Found [bold]{len(groups)}[/bold] group(s).")
     return groups
 
 
 def cmd_list(_args):
     groups = _load_groups_or_exit()
-    print("\nAvailable speakers/groups:\n")
-    for i, group in enumerate(groups, 1):
-        state = group.coordinator.get_current_transport_info().get(
-            "current_transport_state", "UNKNOWN"
-        )
-        print(
-            f"  {i}. [{group_label(group)}] "
-            f"(volume: {group.coordinator.volume}, status: {state})"
-        )
+    console.print()
+    console.print(groups_table(groups, group_label))
 
 
 def cmd_fade(args):
@@ -47,7 +47,10 @@ def cmd_fade(args):
     if args.group:
         group = find_group_by_name(groups, args.group)
         if group is None:
-            print(f"No group matching '{args.group}'. Falling back to selection.")
+            console.print(
+                f"[yellow]No group matching[/yellow] '[bold]{args.group}[/bold]'. "
+                "Falling back to selection."
+            )
     if group is None:
         group = choose_group(groups)
 

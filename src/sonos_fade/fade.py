@@ -1,5 +1,18 @@
 import time
 
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
+from rich.prompt import IntPrompt
+
+from sonos_fade.ui import console, groups_table, volume_bar
+
 DEFAULT_SECONDS_PER_STEP = 10
 
 
@@ -8,29 +21,26 @@ def group_label(group):
 
 
 def choose_group(groups):
-    print("\nAvailable speakers/groups:\n")
-    labels = [group_label(group) for group in groups]
-    for i, group in enumerate(groups, 1):
-        state = group.coordinator.get_current_transport_info().get(
-            "current_transport_state", "UNKNOWN"
-        )
-        print(
-            f"  {i}. [{labels[i-1]}] "
-            f"(volume: {group.coordinator.volume}, status: {state})"
-        )
+    console.print()
+    console.print(groups_table(groups, group_label))
 
     if len(groups) == 1:
-        print(f"\nOnly one speaker/group found. Using [{labels[0]}].")
+        console.print(
+            f"\n[dim]Only one speaker/group found. Using[/dim] "
+            f"[bold cyan][{group_label(groups[0])}][/bold cyan]."
+        )
         return groups[0]
 
     while True:
         try:
-            choice = int(input("\nChoose a speaker/group: "))
+            choice = IntPrompt.ask("\n[bold]Choose a speaker/group[/bold]")
             if 1 <= choice <= len(groups):
                 return groups[choice - 1]
-            print(f"Please enter a number between 1 and {len(groups)}.")
+            console.print(
+                f"[yellow]Please enter a number between 1 and {len(groups)}.[/yellow]"
+            )
         except ValueError:
-            print("Please enter a valid number.")
+            console.print("[yellow]Please enter a valid number.[/yellow]")
 
 
 def find_group_by_name(groups, name):
@@ -45,16 +55,17 @@ def find_group_by_name(groups, name):
 
 def choose_target_volume(group):
     current = group.coordinator.volume
-    print(f"\nCurrent volume: {current}")
+    console.print()
+    console.print("[bold]Current volume[/bold] ", volume_bar(int(current)))
 
     while True:
         try:
-            target = int(input("Target volume (0-100): "))
+            target = IntPrompt.ask("[bold]Target volume (0-100)[/bold]")
             if 0 <= target <= 100:
                 return target
-            print("Please enter a number between 0 and 100.")
+            console.print("[yellow]Please enter a number between 0 and 100.[/yellow]")
         except ValueError:
-            print("Please enter a valid number.")
+            console.print("[yellow]Please enter a valid number.[/yellow]")
 
 
 def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
@@ -62,24 +73,46 @@ def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
     diff = target - current
 
     if diff == 0:
-        print("Already at target volume.")
+        console.print("[dim]Already at target volume.[/dim]")
         return
 
     step = 1 if diff > 0 else -1
     steps = abs(diff)
     total_time = steps * seconds_per_step
 
-    print(
-        f"\nFading from {current} to {target} "
-        f"({steps} steps, ~{total_time:.0f}s)"
+    console.print()
+    console.print(
+        f"[bold]Fading[/bold] [cyan]{current}[/cyan] → [cyan]{target}[/cyan] "
+        f"[dim]({steps} steps, ~{total_time:.0f}s)[/dim]"
     )
 
-    for i in range(1, steps + 1):
-        new_volume = current + (step * i)
-        for member in group.members:
-            member.volume = new_volume
-        print(f"\r  Volume: {new_volume} (step {i} of {steps})", end="", flush=True)
-        if i < steps:
-            time.sleep(seconds_per_step)
+    progress = Progress(
+        SpinnerColumn(style="cyan"),
+        TextColumn("[bold]{task.description}"),
+        BarColumn(bar_width=None, complete_style="cyan", finished_style="green"),
+        TextColumn("vol [bold]{task.fields[volume]:>3}[/bold]"),
+        MofNCompleteColumn(),
+        TimeRemainingColumn(),
+        console=console,
+        transient=False,
+    )
 
-    print(f"\n\nDone. Volume set to {target}.")
+    with progress:
+        task_id = progress.add_task(
+            f"{current} → {target}", total=steps, volume=current
+        )
+        for i in range(1, steps + 1):
+            new_volume = current + (step * i)
+            for member in group.members:
+                member.volume = new_volume
+            progress.update(task_id, advance=1, volume=new_volume)
+            if i < steps:
+                time.sleep(seconds_per_step)
+
+    console.print(
+        Panel(
+            f"[bold green]✓[/bold green] Done. Volume set to [bold]{target}[/bold].",
+            border_style="green",
+            expand=False,
+        )
+    )

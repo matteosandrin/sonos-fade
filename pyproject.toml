@@ -6,10 +6,11 @@ build-backend = "hatchling.build"
 name = "sonos-fade"
 version = "0.1.0"
 description = "Gradually fade the volume of a Sonos group on your LAN."
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 dependencies = [
   "soco>=0.30",
   "requests",
+  "rich>=13",
 ]
 
 [project.scripts]
