@@ -21,12 +21,16 @@ def _fail(message: str) -> None:
 
 
 def _load_groups_or_exit():
-    with console.status("[cyan]Discovering Sonos speakers on your LAN…", spinner="dots"):
+    with console.status(
+        "[cyan]Discovering Sonos speakers on your LAN…", spinner="dots"
+    ) as status:
         speakers = discover_speakers()
-    if not speakers:
-        _fail("No Sonos speakers found on the network.")
+        if not speakers:
+            status.stop()
+            _fail("No Sonos speakers found on the network.")
 
-    groups = get_groups(speakers)
+        status.update("[cyan]Resolving speaker groups…")
+        groups = get_groups(speakers)
     if not groups:
         _fail("No speaker groups found.")
 
