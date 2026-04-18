@@ -101,13 +101,17 @@ def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
         task_id = progress.add_task(
             f"{current} → {target}", total=steps, volume=current
         )
+        fps = 60
         for i in range(1, steps + 1):
+            sub_ticks = max(1, int(seconds_per_step * fps))
+            tick = seconds_per_step / sub_ticks
+            for k in range(1, sub_ticks + 1):
+                time.sleep(tick)
+                progress.update(task_id, completed=(i - 1) + k / sub_ticks)
             new_volume = current + (step * i)
             for member in group.members:
                 member.volume = new_volume
-            progress.update(task_id, advance=1, volume=new_volume)
-            if i < steps:
-                time.sleep(seconds_per_step)
+            progress.update(task_id, completed=i, volume=new_volume)
 
     console.print(
         Panel(
