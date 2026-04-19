@@ -9,9 +9,7 @@ from rich.progress import (
     TextColumn,
     TimeRemainingColumn,
 )
-from rich.prompt import IntPrompt
-
-from sonos_fade.ui import console, groups_table, volume_bar
+from sonos_fade.ui import ask_int, console, groups_table, volume_bar
 
 DEFAULT_SECONDS_PER_STEP = 10
 
@@ -31,16 +29,11 @@ def choose_group(groups):
         )
         return groups[0]
 
-    while True:
-        try:
-            choice = IntPrompt.ask("\n[bold]Choose a speaker/group[/bold]")
-            if 1 <= choice <= len(groups):
-                return groups[choice - 1]
-            console.print(
-                f"[yellow]Please enter a number between 1 and {len(groups)}.[/yellow]"
-            )
-        except ValueError:
-            console.print("[yellow]Please enter a valid number.[/yellow]")
+    console.print()
+    choice = ask_int(
+        "[bold]Choose a speaker/group[/bold]", minimum=1, maximum=len(groups)
+    )
+    return groups[choice - 1]
 
 
 def find_group_by_name(groups, name):
@@ -58,14 +51,7 @@ def choose_target_volume(group):
     console.print()
     console.print("[bold]Current volume[/bold] ", volume_bar(int(current)))
 
-    while True:
-        try:
-            target = IntPrompt.ask("[bold]Target volume (0-100)[/bold]")
-            if 0 <= target <= 100:
-                return target
-            console.print("[yellow]Please enter a number between 0 and 100.[/yellow]")
-        except ValueError:
-            console.print("[yellow]Please enter a valid number.[/yellow]")
+    return ask_int("[bold]Target volume (0-100)[/bold]", minimum=0, maximum=100)
 
 
 def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
@@ -97,21 +83,34 @@ def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
         transient=False,
     )
 
-    with progress:
-        task_id = progress.add_task(
-            f"{current} → {target}", total=steps, volume=current
+    last_applied = current
+    try:
+        with progress:
+            task_id = progress.add_task(
+                f"{current} → {target}", total=steps, volume=current
+            )
+            fps = 60
+            for i in range(1, steps + 1):
+                sub_ticks = max(1, int(seconds_per_step * fps))
+                tick = seconds_per_step / sub_ticks
+                for k in range(1, sub_ticks + 1):
+                    time.sleep(tick)
+                    progress.update(task_id, completed=(i - 1) + k / sub_ticks)
+                new_volume = current + (step * i)
+                for member in group.members:
+                    member.volume = new_volume
+                last_applied = new_volume
+                progress.update(task_id, completed=i, volume=new_volume)
+    except KeyboardInterrupt:
+        console.print(
+            Panel(
+                f"[bold yellow]✗[/bold yellow] Cancelled. "
+                f"Volume left at [bold]{last_applied}[/bold].",
+                border_style="yellow",
+                expand=False,
+            )
         )
-        fps = 60
-        for i in range(1, steps + 1):
-            sub_ticks = max(1, int(seconds_per_step * fps))
-            tick = seconds_per_step / sub_ticks
-            for k in range(1, sub_ticks + 1):
-                time.sleep(tick)
-                progress.update(task_id, completed=(i - 1) + k / sub_ticks)
-            new_volume = current + (step * i)
-            for member in group.members:
-                member.volume = new_volume
-            progress.update(task_id, completed=i, volume=new_volume)
+        raise
 
     console.print(
         Panel(

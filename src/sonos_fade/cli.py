@@ -12,7 +12,7 @@ from sonos_fade.fade import (
     find_group_by_name,
     group_label,
 )
-from sonos_fade.ui import console, groups_table
+from sonos_fade.ui import UserQuit, console, groups_table
 
 
 def _fail(message: str) -> None:
@@ -125,7 +125,15 @@ def main(argv=None):
     if args.command is None:
         args = parser.parse_args(["fade", *(argv or [])])
 
-    args.func(args)
+    try:
+        args.func(args)
+    except UserQuit:
+        console.print("[yellow]Quit.[/yellow]")
+        sys.exit(0)
+    except (KeyboardInterrupt, EOFError):
+        console.print()
+        console.print("[yellow]Cancelled.[/yellow]")
+        sys.exit(130)
 
 
 if __name__ == "__main__":

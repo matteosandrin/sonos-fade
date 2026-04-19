@@ -1,8 +1,15 @@
 from rich.console import Console
+from rich.prompt import Prompt
 from rich.table import Table
 from rich.text import Text
 
 console = Console()
+
+_QUIT_TOKENS = {"q", "quit", "exit"}
+
+
+class UserQuit(Exception):
+    """Raised when the user types 'q' at an interactive prompt."""
 
 _STATUS_STYLES = {
     "PLAYING": "bold green",
@@ -33,6 +40,27 @@ def volume_bar(volume: int, width: int = _BAR_WIDTH) -> Text:
     bar.append("░" * (width - filled), style="grey37")
     bar.append(f" {volume:>3}", style="bold")
     return bar
+
+
+def ask_int(prompt: str, *, minimum: int, maximum: int) -> int:
+    hint = "[dim](or 'q' to quit)[/dim]"
+    while True:
+        try:
+            raw = Prompt.ask(f"{prompt} {hint}").strip().lower()
+        except EOFError:
+            raise UserQuit()
+        if raw in _QUIT_TOKENS:
+            raise UserQuit()
+        try:
+            n = int(raw)
+        except ValueError:
+            console.print("[yellow]Please enter a valid number (or 'q' to quit).[/yellow]")
+            continue
+        if minimum <= n <= maximum:
+            return n
+        console.print(
+            f"[yellow]Please enter a number between {minimum} and {maximum}.[/yellow]"
+        )
 
 
 def groups_table(groups, label_for) -> Table:
