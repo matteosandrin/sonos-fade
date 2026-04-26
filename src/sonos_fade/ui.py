@@ -66,14 +66,14 @@ def ask_int(prompt: str, *, minimum: int, maximum: int) -> int:
 def groups_table(groups, label_for) -> Table:
     table = Table(
         title="Sonos speakers / groups",
-        title_style="bold cyan",
-        header_style="bold magenta",
+        title_style="bold",
+        header_style="bold",
         border_style="grey42",
         show_lines=False,
         expand=False,
     )
-    table.add_column("#", justify="right", style="cyan", no_wrap=True)
-    table.add_column("Group", style="bold white")
+    table.add_column("#", justify="right", no_wrap=True)
+    table.add_column("Group")
     table.add_column("Volume", no_wrap=True)
     table.add_column("Status", no_wrap=True)
 

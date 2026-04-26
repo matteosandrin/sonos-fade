@@ -25,7 +25,7 @@ def choose_group(groups):
     if len(groups) == 1:
         console.print(
             f"\n[dim]Only one speaker/group found. Using[/dim] "
-            f"[bold cyan][{group_label(groups[0])}][/bold cyan]."
+            f"[bold][{group_label(groups[0])}][/bold]."
         )
         return groups[0]
 

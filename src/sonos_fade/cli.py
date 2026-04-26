@@ -34,7 +34,7 @@ def _load_groups_or_exit():
     if not groups:
         _fail("No speaker groups found.")
 
-    console.print(f"[green]✓[/green] Found [bold]{len(groups)}[/bold] group(s).")
+    console.print(f"[green]✓[/green] [white]Found {len(groups)} group(s).[/white]")
     return groups
 
 
