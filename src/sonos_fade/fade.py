@@ -64,7 +64,7 @@ def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
 
     step = 1 if diff > 0 else -1
     steps = abs(diff)
-    total_time = steps * seconds_per_step
+    total_time = max(0, steps - 1) * seconds_per_step
 
     console.print()
     console.print(
@@ -83,23 +83,27 @@ def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
     )
 
     last_applied = current
+    bar_total = max(1, steps - 1)
     try:
         with progress:
             task_id = progress.add_task(
-                f"{current} → {target}", total=steps, volume=current
+                f"{current} → {target}", total=bar_total, volume=current
             )
             fps = 60
-            for i in range(1, steps + 1):
-                sub_ticks = max(1, int(seconds_per_step * fps))
-                tick = seconds_per_step / sub_ticks
-                for k in range(1, sub_ticks + 1):
-                    time.sleep(tick)
-                    progress.update(task_id, completed=(i - 1) + k / sub_ticks)
-                new_volume = current + (step * i)
+            for i in range(steps):
+                new_volume = current + step * (i + 1)
                 for member in group.members:
                     member.volume = new_volume
                 last_applied = new_volume
                 progress.update(task_id, completed=i, volume=new_volume)
+                if i == steps - 1:
+                    break
+                sub_ticks = max(1, int(seconds_per_step * fps))
+                tick = seconds_per_step / sub_ticks
+                for k in range(1, sub_ticks + 1):
+                    time.sleep(tick)
+                    progress.update(task_id, completed=i + k / sub_ticks)
+            progress.update(task_id, completed=bar_total)
     except KeyboardInterrupt:
         console.print(
             Panel(
