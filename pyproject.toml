@@ -6,12 +6,33 @@ build-backend = "hatchling.build"
 name = "sonos-fade"
 version = "0.1.0"
 description = "Gradually fade the volume of a Sonos group on your LAN."
-requires-python = ">=3.14"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Matteo Sandrin", email = "sandrin98@gmail.com" }]
+license = { text = "MIT" }
+keywords = ["sonos", "audio", "volume", "fade", "cli"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Sound/Audio",
+]
 dependencies = [
   "soco>=0.30",
   "requests",
   "rich>=13",
 ]
+
+[project.urls]
+Homepage = "https://github.com/matteosandrin/sonos-fade"
+Repository = "https://github.com/matteosandrin/sonos-fade"
+Issues = "https://github.com/matteosandrin/sonos-fade/issues"
 
 [project.scripts]
 sonos-fade = "sonos_fade.cli:main"
