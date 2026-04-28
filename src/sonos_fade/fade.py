@@ -68,17 +68,16 @@ def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
 
     console.print()
     console.print(
-        f"[bold]Fading[/bold] [cyan]{current}[/cyan] → [cyan]{target}[/cyan] "
+        f"[bold]Fading[/bold] {current} → {target} "
         f"[dim]({steps} steps, ~{total_time:.0f}s)[/dim]"
     )
 
     progress = Progress(
         SpinnerColumn(style="cyan"),
-        TextColumn("[bold]{task.description}"),
-        BarColumn(bar_width=None, complete_style="cyan", finished_style="green"),
         TextColumn("vol [bold]{task.fields[volume]:>3}[/bold]"),
         MofNCompleteColumn(),
         TimeRemainingColumn(),
+        BarColumn(bar_width=None, complete_style="cyan", finished_style="green"),
         console=console,
         transient=False,
     )

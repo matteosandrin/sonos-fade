@@ -3,7 +3,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 from rich.text import Text
 
-console = Console()
+console = Console(highlight=False)
 
 _QUIT_TOKENS = {"q", "quit", "exit"}
 
