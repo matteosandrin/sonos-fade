@@ -1,3 +1,0 @@
-soco
-requests
-rich>=13
