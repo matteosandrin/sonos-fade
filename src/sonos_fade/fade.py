@@ -50,7 +50,7 @@ def choose_target_volume(group):
     current = group.coordinator.volume
     console.print()
     console.print("[bold]Current volume[/bold] ", volume_bar(int(current)))
-
+    console.print()
     return ask_int("[bold]Target volume (0-100)[/bold]", minimum=0, maximum=100)
 
 
@@ -112,6 +112,7 @@ def fade_volume(group, target, seconds_per_step=DEFAULT_SECONDS_PER_STEP):
         )
         raise
 
+    console.print()
     console.print(
         Panel(
             f"[bold green]✓[/bold green] Done. Volume set to [bold]{target}[/bold].",
