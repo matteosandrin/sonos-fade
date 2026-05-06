@@ -1,10 +1,10 @@
 # sonos-fade
 
-Gradually fade the volume of a Sonos group on your LAN.
+Gradually fade the volume of a Sonos speaker on your LAN.
 
-Discovers Sonos speakers via SSDP, lets you pick a group, and ramps the volume
-to a target level one step at a time — handy for nudging music down at the end
-of an evening without a jarring cut.
+Discovers Sonos speakers via SSDP, lets you pick a speaker, and ramps the volume
+to a target level one step at a time. Handy if your coworkers insist on playing
+music out loud during the workday.
 
 ## Install
 
@@ -29,7 +29,7 @@ sonos-fade list
 Non-interactive fade:
 
 ```bash
-sonos-fade fade --group "Living Room" --target 5 --seconds-per-step 2
+sonos-fade --group "Living Room" --target 5 --seconds-per-step 2
 ```
 
 ### Options
@@ -45,4 +45,4 @@ sonos-fade fade --group "Living Room" --target 5 --seconds-per-step 2
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
