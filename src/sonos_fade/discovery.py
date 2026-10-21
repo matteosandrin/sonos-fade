@@ -2,7 +2,8 @@ import soco
 
 
 def discover_speakers():
-    speakers = soco.discover(timeout=5)
+    # Some speakers do not reply to SSDP. If SSDP finds none, scan the subnet on port 1400.
+    speakers = soco.discover(timeout=5, allow_network_scan=True)
     if not speakers:
         return []
     return list(speakers)
